@@ -214,6 +214,49 @@ def canonical_college_key(value: object) -> str:
     return COLLEGE_ALIASES.get(key, key)
 
 
+NON_IDENTITY_PAREN_TERMS = (
+    "双一流",
+    "建设高校",
+    "民办学校",
+    "独立学院",
+    "内地与港澳台地区合作办学",
+)
+
+
+def college_identity_key(value: object) -> str:
+    """College key that preserves campus identity but removes descriptive labels."""
+    text = compact(value).replace("（", "(").replace("）", ")")
+    text = text.replace("“", "").replace("”", "").replace('"', "")
+
+    def replace_paren(match: re.Match[str]) -> str:
+        body = match.group(1)
+        if any(term in body for term in NON_IDENTITY_PAREN_TERMS):
+            return ""
+        return f"({body})"
+
+    text = re.sub(r"\(([^()]*)\)", replace_paren, text)
+    text = re.sub(r"[·,，、\s]", "", text)
+    return COLLEGE_ALIASES.get(text, text)
+
+
+def history_college_identity_keys(row: pd.Series | dict) -> list[str]:
+    base = college_identity_key(row.get("college_name", ""))
+    keys = [base] if base else []
+    location = compact(row.get("location", ""))
+    if base and location and "(" not in base:
+        location_tail = re.split(r"[·,，、/]", location)[-1]
+        if location_tail:
+            keys.append(f"{base}({location_tail})")
+    seen: set[str] = set()
+    out: list[str] = []
+    for key in keys:
+        key = COLLEGE_ALIASES.get(key, key)
+        if key and key not in seen:
+            seen.add(key)
+            out.append(key)
+    return out
+
+
 def compatible_college_keys(plan_key: object, history_key: object) -> bool:
     plan = canonical_college_key(plan_key)
     hist = canonical_college_key(history_key)
@@ -653,21 +696,37 @@ def fill_history_college_codes(history: pd.DataFrame, plan: pd.DataFrame) -> pd.
         return history
 
     out = history.copy()
-    plan_pairs = plan[["college_key", "college_code"]].drop_duplicates()
-    unique_counts = plan_pairs.groupby("college_key")["college_code"].nunique()
-    unique_keys = set(unique_counts[unique_counts == 1].index)
-    code_by_college_key = (
-        plan_pairs[plan_pairs["college_key"].isin(unique_keys)]
-        .set_index("college_key")["college_code"]
-        .to_dict()
-    )
 
     def current_code(value: object) -> str:
         text = normalize_text(value)
         return code4(text) if text else ""
 
+    plan_pairs = plan[["college_name", "college_key", "college_code"]].drop_duplicates().copy()
+    plan_pairs["college_identity_key"] = plan_pairs["college_name"].map(college_identity_key)
+
+    def unique_code_map(frame: pd.DataFrame, key_col: str) -> dict[str, str]:
+        valid = frame[[key_col, "college_code"]].drop_duplicates()
+        valid = valid[valid[key_col].map(lambda x: normalize_text(x) != "")]
+        unique_counts = valid.groupby(key_col)["college_code"].nunique()
+        unique_keys = set(unique_counts[unique_counts == 1].index)
+        return valid[valid[key_col].isin(unique_keys)].set_index(key_col)["college_code"].to_dict()
+
+    code_by_identity_key = unique_code_map(plan_pairs, "college_identity_key")
+    code_by_college_key = unique_code_map(plan_pairs, "college_key")
+
     out["college_code_source"] = out["college_code"].map(lambda x: "pdf" if current_code(x) else "")
     out["college_code"] = out["college_code"].map(current_code)
+
+    fill_mask = out["college_code"] == ""
+    filled_codes = out.loc[fill_mask].apply(
+        lambda r: next(
+            (code_by_identity_key[key] for key in history_college_identity_keys(r) if key in code_by_identity_key),
+            "",
+        ),
+        axis=1,
+    )
+    out.loc[fill_mask, "college_code"] = filled_codes
+    out.loc[fill_mask & (out["college_code"] != ""), "college_code_source"] = "plan_identity_key"
 
     fill_mask = out["college_code"] == ""
     filled_codes = out.loc[fill_mask, "college_key"].map(lambda x: code_by_college_key.get(normalize_text(x), ""))
