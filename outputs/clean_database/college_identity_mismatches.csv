@@ -1,0 +1,3 @@
+﻿volunteer_id,year,college_code,college_name,college_key,history_college_name,history_college_key,major_name,history_major_name,history_lowest_score,history_lowest_rank,history_source_page,match_level
+0189-001,2023,0189,北京航空航天大学(杭州国际校园)(“双一流”建设高校),北京航空航天大学,北京航空航天大学中法航空学院,北京航空航天大学中法航空学院,"工科试验班类(中外合作办学,中法航空试验班)","工科试验班类(中外合作办学,中法航空试验班)",657,9139.0,52,exact
+1109-501,2023,1109,北京科技职业大学,北京科技职业大学,北京电子科技职业学院,北京电子科技职业学院,无人机应用技术,无人机应用技术,487,175646.0,53,exact

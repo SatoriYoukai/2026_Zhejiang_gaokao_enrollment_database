@@ -1,0 +1,13 @@
+{
+  "plan_rows": 24240,
+  "history_rows": 66481,
+  "master_rows": 24240,
+  "ambiguous_rows": 263,
+  "college_identity_mismatch_rows": 2,
+  "curated_rejection_rows": 1073,
+  "matched_by_year": {
+    "2023": 13809,
+    "2024": 15511,
+    "2025": 18940
+  }
+}

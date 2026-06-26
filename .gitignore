@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.log
+*.tmp
+~$*
+
+# Keep only the final public output directory under version control.
+outputs/*
+!outputs/clean_database/
+!outputs/clean_database/**
+outputs/clean_database/_cache/
+
+# Local scratch files from exploratory rebuilds.
+tmp/
+analyze.py
+parse.py
+robust*.py
+extract*.py
+summarize*.py
+append
+err.txt
+final_*.json
+matched.json
+math_*.json
+robust_*.json
+*.json.cc
+*.xls
