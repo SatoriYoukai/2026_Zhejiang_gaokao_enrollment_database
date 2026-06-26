@@ -8,7 +8,10 @@ __pycache__/
 outputs/*
 !outputs/clean_database/
 !outputs/clean_database/**
+!outputs/volunteer_browser/
+!outputs/volunteer_browser/**
 outputs/clean_database/_cache/
+outputs/volunteer_browser/server.pid
 
 # Local scratch files from exploratory rebuilds.
 tmp/

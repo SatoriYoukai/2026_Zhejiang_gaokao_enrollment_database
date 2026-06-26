@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>浙江 2026 平行志愿筛选器</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>浙江 2026 平行志愿筛选器</h1>
+        <p id="dataMeta">加载数据中...</p>
+      </div>
+      <div class="header-actions">
+        <button id="resetBtn" type="button">重置</button>
+        <button id="exportBtn" type="button">导出当前结果 CSV</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="filters" aria-label="筛选条件">
+        <label>
+          关键词逻辑
+          <input id="keywordInput" type="search" placeholder='例如 数学 AND NOT 师范；也可用 (AI OR 智能) AND "计算机类"' />
+          <span id="keywordRuleStatus" class="field-hint">词本身表示包含；支持 AND / OR / NOT、括号、引号短语，空格等价 AND。</span>
+        </label>
+        <label>
+          院校
+          <input id="collegeInput" type="search" placeholder="例如 宁波大学" />
+        </label>
+        <label>
+          专业
+          <input id="majorInput" type="search" placeholder="例如 信息与计算科学" />
+        </label>
+        <label>
+          省份
+          <select id="provinceSelect"></select>
+        </label>
+        <label>
+          城市
+          <select id="citySelect"></select>
+        </label>
+        <label>
+          学历
+          <select id="degreeSelect"></select>
+        </label>
+        <label>
+          选科
+          <select id="subjectSelect"></select>
+        </label>
+        <label>
+          历史匹配年数
+          <select id="historyYearsSelect"></select>
+        </label>
+        <label>
+          2025 位次
+          <span class="range-pair">
+            <input id="rank2025Min" type="number" inputmode="numeric" placeholder="最小" />
+            <input id="rank2025Max" type="number" inputmode="numeric" placeholder="最大" />
+          </span>
+        </label>
+        <label>
+          最新历史位次
+          <span class="range-pair">
+            <input id="latestRankMin" type="number" inputmode="numeric" placeholder="最小" />
+            <input id="latestRankMax" type="number" inputmode="numeric" placeholder="最大" />
+          </span>
+        </label>
+        <label>
+          最新历史分数
+          <span class="range-pair">
+            <input id="latestScoreMin" type="number" inputmode="numeric" placeholder="最低" />
+            <input id="latestScoreMax" type="number" inputmode="numeric" placeholder="最高" />
+          </span>
+        </label>
+        <label>
+          2026 计划数
+          <span class="range-pair">
+            <input id="planMin" type="number" inputmode="numeric" placeholder="最少" />
+            <input id="planMax" type="number" inputmode="numeric" placeholder="最多" />
+          </span>
+        </label>
+        <label>
+          排序
+          <select id="sortSelect">
+            <option value="latestRankAsc">最新位次从高到低</option>
+            <option value="latestRankDesc">最新位次从低到高</option>
+            <option value="scoreDesc">最新分数从高到低</option>
+            <option value="planDesc">计划数从多到少</option>
+            <option value="collegeAsc">院校名称</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="summary-grid" aria-label="筛选结果摘要">
+        <div>
+          <strong id="shownCount">0</strong>
+          <span>当前结果</span>
+        </div>
+        <div>
+          <strong id="undergradCount">0</strong>
+          <span>本科</span>
+        </div>
+        <div>
+          <strong id="matchedCount">0</strong>
+          <span>有历史位次</span>
+        </div>
+        <div>
+          <strong id="medianRank">-</strong>
+          <span>最新位次中位数</span>
+        </div>
+      </section>
+
+      <section class="table-tools">
+        <div id="activeFilters"></div>
+        <label>
+          每页
+          <select id="pageSizeSelect">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="table-wrap" aria-label="志愿结果表">
+        <table>
+          <thead>
+            <tr>
+              <th>志愿</th>
+              <th>院校</th>
+              <th>专业</th>
+              <th>城市</th>
+              <th>选科</th>
+              <th>计划</th>
+              <th>2023 位次</th>
+              <th>2024 位次</th>
+              <th>2025 位次</th>
+              <th>最新</th>
+              <th>匹配</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </section>
+
+      <nav class="pagination" aria-label="分页">
+        <button id="prevPageBtn" type="button">上一页</button>
+        <span id="pageInfo">第 1 页</span>
+        <button id="nextPageBtn" type="button">下一页</button>
+      </nav>
+    </main>
+
+    <dialog id="detailDialog">
+      <div class="dialog-header">
+        <h2 id="detailTitle">详情</h2>
+        <button id="closeDialogBtn" type="button" aria-label="关闭">×</button>
+      </div>
+      <div id="detailContent"></div>
+    </dialog>
+
+    <script src="data.js"></script>
+    <script src="filter_query.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
