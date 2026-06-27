@@ -69,6 +69,26 @@ ROW_KEYS = [
     "evidence_gaps",
 ]
 
+ANNEX_ROW_KEYS = [
+    "pool_id",
+    "volunteer_id",
+    "college_name",
+    "major_name",
+    "rank_band",
+    "predicted_rank",
+    "prescreen_priority",
+    "official_major_match",
+    "provisional_bucket",
+    "why_not_in_main_201",
+    "decision_impact",
+    "goal_alignment",
+    "risk_tags",
+    "uncertainty_tags",
+    "source_ids",
+    "evidence_gaps",
+    "rescue_queue_refs",
+]
+
 GOAL_ALIGNMENT_KEYS = [
     "foundation_fit",
     "learning_freedom_fit",
@@ -159,6 +179,9 @@ def validate_school(run_dir: Path, school_key: str, expected_rows: int | None, r
         "student_searches": 0,
         "rescue_items": 0,
         "high_priority_rescue_items": 0,
+        "annex_rows_expected": 0,
+        "annex_findings": 0,
+        "annex_status": "not_applicable",
         "protocol_issues": 0,
     }
 
@@ -262,6 +285,35 @@ def validate_school(run_dir: Path, school_key: str, expected_rows: int | None, r
         except Exception as exc:  # noqa: BLE001
             errors.append(f"rescue_queue_csv_parse_error:{exc}")
 
+    annex_input_path = run_dir / "school_packets" / school_key / "annex_rows.csv"
+    if annex_input_path.exists() and annex_input_path.stat().st_size:
+        try:
+            annex_input = pd.read_csv(annex_input_path, dtype=str, encoding="utf-8-sig").fillna("")
+            metrics["annex_rows_expected"] = len(annex_input)
+            metrics["annex_status"] = "pending"
+        except Exception as exc:  # noqa: BLE001
+            warnings.append(f"annex_input_parse_error:{exc}")
+
+        annex_result_path = out_dir / "annex_findings.json"
+        annex_summary_path = out_dir / "annex_summary.md"
+        if annex_result_path.exists() and annex_result_path.stat().st_size:
+            try:
+                annex_result = json.loads(annex_result_path.read_text(encoding="utf-8-sig"))
+                annex_findings = annex_result.get("annex_row_findings", [])
+                metrics["annex_findings"] = len(annex_findings)
+                metrics["annex_status"] = "done"
+                for idx, row in enumerate(annex_findings, start=1):
+                    for key in missing_keys(row, ANNEX_ROW_KEYS):
+                        warnings.append(f"annex_row_{idx}_missing_key:{key}")
+                if metrics["annex_rows_expected"] and metrics["annex_findings"] != metrics["annex_rows_expected"]:
+                    warnings.append(
+                        f"annex_row_count_mismatch:expected_{metrics['annex_rows_expected']}:got_{metrics['annex_findings']}"
+                    )
+            except Exception as exc:  # noqa: BLE001
+                warnings.append(f"annex_findings_json_parse_error:{exc}")
+        if annex_result_path.exists() != annex_summary_path.exists():
+            warnings.append("annex_file_pair_incomplete")
+
     metrics["errors"] = ";".join(errors)
     metrics["warnings"] = ";".join(warnings)
     metrics["valid"] = not errors
@@ -306,6 +358,8 @@ def main() -> None:
         "total_student_searches": int(out["student_searches"].sum()),
         "total_rescue_items": int(out["rescue_items"].sum()),
         "total_high_priority_rescue_items": int(out["high_priority_rescue_items"].sum()),
+        "total_annex_rows_expected": int(out["annex_rows_expected"].sum()),
+        "total_annex_findings": int(out["annex_findings"].sum()),
     }
     (qa_dir / "deep_crawl_validation_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2),

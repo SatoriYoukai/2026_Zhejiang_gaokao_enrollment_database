@@ -251,6 +251,53 @@ Each row-level `goal_alignment` must explicitly discuss:
 - `research_postgrad_fit`: research access, recommendation path, and upward mobility;
 - `time_tax_risk`: management/formalism/campus-move/course-fragmentation risk.
 
+### Optional Same-School Annex Rows
+
+Some school packets may include `annex_rows.csv`. These are borderline-review majors from the same school as the main 201-row crawl. They are not part of the main 201 deep-crawl row count, but they should be lightly evaluated because school-level evidence is already being collected.
+
+If `annex_rows.csv` exists:
+
+- do not insert annex rows into `result.json.row_findings`;
+- do not change the expected main row count;
+- reuse school-level sources where they apply;
+- collect major-specific official evidence only when it is low-cost or decision-changing;
+- add any annex-specific blockers to the same `rescue_queue.csv`, with `major_name` set to the annex major;
+- write two additional files:
+  - `annex_findings.json`
+  - `annex_summary.md`
+
+`annex_findings.json` required top-level fields:
+
+- `school_key`
+- `college_name`
+- `annex_scope`
+- `annex_row_findings`
+- `annex_evidence_gaps`
+- `annex_rescue_items`
+- `agent_notes`
+
+Each `annex_row_findings` item must include:
+
+- `pool_id`
+- `volunteer_id`
+- `college_name`
+- `major_name`
+- `rank_band`
+- `predicted_rank`
+- `prescreen_priority`
+- `official_major_match`
+- `provisional_bucket`: `strong_keep`, `keep`, `borderline`, `defer`, or `drop`
+- `why_not_in_main_201`
+- `decision_impact`
+- `goal_alignment`
+- `risk_tags`
+- `uncertainty_tags`
+- `source_ids`
+- `evidence_gaps`
+- `rescue_queue_refs`
+
+Annex quality target: enough to decide whether the annex major deserves later scoring/rescue, not a full duplicate deep crawl. If time is tight, prefer a clearly labeled partial annex finding over ignoring the row.
+
 ### `sources.csv`
 
 Required columns:
