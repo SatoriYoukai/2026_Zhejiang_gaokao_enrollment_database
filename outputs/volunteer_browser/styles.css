@@ -207,7 +207,7 @@ select:focus {
 
 table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1260px;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -251,6 +251,10 @@ tbody tr:hover {
 
 .college-cell {
   min-width: 220px;
+}
+
+.tuition-cell {
+  min-width: 92px;
 }
 
 .tag {

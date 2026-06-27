@@ -39,6 +39,12 @@ function fmt(value) {
   return String(value);
 }
 
+function fmtTuition(value) {
+  const n = asNumber(value);
+  if (n === null) return "-";
+  return `${n.toLocaleString("zh-CN")} 元/年`;
+}
+
 function norm(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -279,6 +285,7 @@ function renderTable() {
           <td>${escapeHtml([row.province, row.city].filter(Boolean).join("·"))}</td>
           <td><span class="tag">${escapeHtml(row.subject_key || "-")}</span></td>
           <td class="num">${fmt(row.plan_count)}</td>
+          <td class="num tuition-cell">${escapeHtml(fmtTuition(row.tuition))}</td>
           <td class="num">${fmt(row["2023_history_lowest_rank"])}</td>
           <td class="num">${fmt(row["2024_history_lowest_rank"])}</td>
           <td class="num">${fmt(row["2025_history_lowest_rank"])}</td>
@@ -327,7 +334,7 @@ function showDetail(row) {
     ["学历/学制", `${fmt(row.degree_level)} / ${fmt(row.duration)} 年`],
     ["2026 计划数", row.plan_count],
     ["选科要求", row.subject_requirement],
-    ["学费", row.tuition],
+    ["2026 学费", fmtTuition(row.tuition)],
     ["备注", row.remark],
     ["历史匹配年数", row.history_years_matched],
     ["历史位次串", row.history_ranks],
@@ -391,6 +398,7 @@ function exportCsv() {
     "degree_level",
     "subject_key",
     "plan_count",
+    "tuition",
     "2023_history_lowest_score",
     "2023_history_lowest_rank",
     "2024_history_lowest_score",
