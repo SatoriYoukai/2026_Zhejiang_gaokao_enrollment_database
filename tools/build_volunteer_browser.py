@@ -31,6 +31,7 @@ KEEP_FIELDS = [
     "subject_requirement",
     "subject_key",
     "tuition",
+    "tuition_raw",
     "remark",
     "2023_match_level",
     "2023_history_major_name",

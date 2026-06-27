@@ -321,6 +321,23 @@ def to_int(value: object) -> int | None:
         return None
 
 
+def parse_tuition(value: object) -> int | None:
+    text = normalize_text(value)
+    if not text:
+        return None
+    if "免费" in text:
+        return 0
+
+    number_match = re.search(r"\d+(?:\.\d+)?", text.replace(",", ""))
+    if not number_match:
+        return None
+
+    number = float(number_match.group())
+    if "万" in text:
+        number *= 10000
+    return int(round(number))
+
+
 def code4(value: object) -> str:
     n = to_int(value)
     return f"{n:04d}" if n is not None else ""
@@ -522,10 +539,12 @@ def read_2026_plan() -> pd.DataFrame:
     df["college_code"] = df["college_code"].map(code4)
     df["major_code"] = df["major_code"].map(code3)
     df["volunteer_id"] = df["college_code"] + "-" + df["major_code"]
+    df["tuition_raw"] = df["tuition"].map(normalize_text)
     for col in ["college_name", "major_name", "province", "city", "degree_level", "subject_requirement", "remark"]:
         df[col] = df[col].map(normalize_text)
-    for col in ["duration", "plan_count", "tuition"]:
+    for col in ["duration", "plan_count"]:
         df[col] = df[col].map(to_int)
+    df["tuition"] = df["tuition_raw"].map(parse_tuition)
     df["college_key"] = df["college_name"].map(lambda x: compact_key(x, strip_parens=True))
     df["major_key"] = df["major_name"].map(lambda x: compact_key(x, strip_parens=False))
     df["major_base_key"] = df["major_name"].map(lambda x: compact_key(x, strip_parens=True))
@@ -548,6 +567,7 @@ def read_2026_plan() -> pd.DataFrame:
         "subject_requirement",
         "subject_key",
         "tuition",
+        "tuition_raw",
         "remark",
         "source_file",
     ]
@@ -1095,11 +1115,12 @@ def write_readme(
             "",
             "- 历史 PDF 没有 2026 专业代码，因此匹配规则是保守的：先按院校代码 + 专业全名，再按去括号专业名，最后仅在同院校同年唯一包含关系时写入。",
             "- 同一院校代码跨年可能对应不同院校；当前版本会先校验院校名/alias，身份不兼容则不写入主表。",
-            "- `*_match_level` 记录匹配方式；`manual_ambiguous` 表示从歧义候选中按校订规则指定拼回。",
-            "- `base` 和 `contains_unique` 里被校订规则判为 DROP/UNCERTAIN 的候选已移出主表，写入 `curated_rejections.csv`。",
-            "- `*_history_source_page` 是 PDF 页码，进入最终志愿单前应回查原 PDF。",
-            "- 主表中空白历史列表示未找到高置信匹配，不等于该专业过去没有招生。",
-        ]
+        "- `*_match_level` 记录匹配方式；`manual_ambiguous` 表示从歧义候选中按校订规则指定拼回。",
+        "- `base` 和 `contains_unique` 里被校订规则判为 DROP/UNCERTAIN 的候选已移出主表，写入 `curated_rejections.csv`。",
+        "- `tuition` 统一为元/年；`tuition_raw` 保留原始计划表中的学费写法，例如 `11万`、`见简注`。",
+        "- `*_history_source_page` 是 PDF 页码，进入最终志愿单前应回查原 PDF。",
+        "- 主表中空白历史列表示未找到高置信匹配，不等于该专业过去没有招生。",
+    ]
     )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

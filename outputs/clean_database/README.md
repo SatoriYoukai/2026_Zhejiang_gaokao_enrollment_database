@@ -37,5 +37,6 @@
 - 同一院校代码跨年可能对应不同院校；当前版本会先校验院校名/alias，身份不兼容则不写入主表。
 - `*_match_level` 记录匹配方式；`manual_ambiguous` 表示从歧义候选中按校订规则指定拼回。
 - `base` 和 `contains_unique` 里被校订规则判为 DROP/UNCERTAIN 的候选已移出主表，写入 `curated_rejections.csv`。
+- `tuition` 统一为元/年；`tuition_raw` 保留原始计划表中的学费写法，例如 `11万`、`见简注`。
 - `*_history_source_page` 是 PDF 页码，进入最终志愿单前应回查原 PDF。
 - 主表中空白历史列表示未找到高置信匹配，不等于该专业过去没有招生。

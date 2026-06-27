@@ -45,6 +45,14 @@ function fmtTuition(value) {
   return `${n.toLocaleString("zh-CN")} 元/年`;
 }
 
+function fmtTuitionDetail(row) {
+  const formatted = fmtTuition(row.tuition);
+  const raw = String(row.tuition_raw || "").trim();
+  if (!raw || /^\d+(?:\.0+)?$/.test(raw.replaceAll(",", ""))) return formatted;
+  if (formatted === "-") return `原表：${raw}`;
+  return `${formatted}（原表：${raw}）`;
+}
+
 function norm(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -334,7 +342,7 @@ function showDetail(row) {
     ["学历/学制", `${fmt(row.degree_level)} / ${fmt(row.duration)} 年`],
     ["2026 计划数", row.plan_count],
     ["选科要求", row.subject_requirement],
-    ["2026 学费", fmtTuition(row.tuition)],
+    ["2026 学费", fmtTuitionDetail(row)],
     ["备注", row.remark],
     ["历史匹配年数", row.history_years_matched],
     ["历史位次串", row.history_ranks],
@@ -399,6 +407,7 @@ function exportCsv() {
     "subject_key",
     "plan_count",
     "tuition",
+    "tuition_raw",
     "2023_history_lowest_score",
     "2023_history_lowest_rank",
     "2024_history_lowest_score",
