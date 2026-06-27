@@ -184,6 +184,8 @@ Each `row_findings` item must include:
 - `volunteer_id`
 - `college_name`
 - `major_name`
+- `risk_tags`
+- `uncertainty_tags`
 - `major_alignment`
 - `training_plan`
 - `math_foundation`
@@ -196,6 +198,8 @@ Each `row_findings` item must include:
 - `student_signals`
 - `source_ids`
 - `evidence_gaps`
+
+Row-level `risk_tags` and `uncertainty_tags` use the same controlled vocabularies as school-level tags. Use them to distinguish risks that affect only one major, such as `new_no_history` for a new AI direction or `campus_move` for one computer major.
 
 ### `sources.csv`
 
@@ -213,7 +217,18 @@ Required columns:
 - `evidence_excerpt`
 - `evidence_summary`
 - `used_for_fields`
+- `access_method`
+- `local_artifact_path`
+- `extraction_method`
 - `reliability_notes`
+
+For downloaded attachments, keep the official URL in `url`. If the file was downloaded or extracted locally, record the repo-relative local path and method. Examples:
+
+- `access_method`: `web.open`, `curl.exe -L`, `browser`, `manual_search_result`, `local_task_packet`
+- `local_artifact_path`: `outputs/.../artifacts/15-computer.rar` or blank
+- `extraction_method`: `pdf_text`, `doc_word_com`, `docx_text`, `tar_extract`, `not_extracted`, or blank
+
+Search snippets may guide discovery, but they should not carry a key fact unless the agent can reach a stable URL or record the limitation under `reliability_notes`.
 
 ### `student_search_log.csv`
 
