@@ -272,6 +272,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("run_dir", type=Path)
     parser.add_argument("--require-pilot-report", action="store_true")
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="Write QA reports and exit 0 even when some schools are incomplete.",
+    )
     args = parser.parse_args()
 
     selected_path = args.run_dir / "selected_schools.csv"
@@ -308,7 +313,7 @@ def main() -> None:
     )
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    if summary["invalid_schools"]:
+    if summary["invalid_schools"] and not args.allow_incomplete:
         invalid = out.loc[~out["valid"], ["school_key", "college_name", "errors"]]
         print(invalid.to_string(index=False))
         raise SystemExit(1)
