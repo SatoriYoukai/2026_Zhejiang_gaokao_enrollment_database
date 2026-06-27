@@ -50,6 +50,7 @@ ROW_KEYS = [
     "volunteer_id",
     "college_name",
     "major_name",
+    "official_major_match",
     "risk_tags",
     "uncertainty_tags",
     "major_alignment",

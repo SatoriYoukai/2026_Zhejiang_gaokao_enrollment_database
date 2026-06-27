@@ -88,17 +88,31 @@ def normalize_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def make_school_context(index: int, school: str, rows: pd.DataFrame, output_dir: Path) -> dict[str, object]:
+def make_school_context(
+    index: int,
+    school: str,
+    rows: pd.DataFrame,
+    run_root: Path,
+    source_pool: Path,
+) -> dict[str, object]:
     row_dicts = rows[IDENTITY_COLUMNS].to_dict(orient="records")
     majors = sorted({str(row["major_name"]) for row in row_dicts})
-    run_root = output_dir.parents[1]
+    school_key = f"school_{index:02d}"
+    output_dir = run_root / "school_outputs" / school_key
+    packet_dir = run_root / "school_packets" / school_key
     return {
-        "school_key": f"school_{index:02d}",
+        "school_key": school_key,
         "college_name": school,
         "generated_at": date.today().isoformat(),
-        "source_pool": str(DEFAULT_INPUT),
+        "source_pool": str(source_pool.as_posix()),
         "assigned_output_dir": str(output_dir.as_posix()),
         "debugger_output_dir": str((run_root / "debugger" / "sop_debugger_output").as_posix()),
+        "packet_dir": str(packet_dir.as_posix()),
+        "input_files": {
+            "school_context": str((packet_dir / "school_context.json").as_posix()),
+            "input_rows": str((packet_dir / "input_rows.csv").as_posix()),
+            "deep_crawl_task": str((packet_dir / "deep_crawl_task.md").as_posix()),
+        },
         "run_scope": {
             "mode": "deep_crawl_test",
             "one_school_only": True,
@@ -123,6 +137,7 @@ def make_school_task(context: dict[str, object]) -> str:
     school_key = context["school_key"]
     school = context["college_name"]
     output_dir = context["assigned_output_dir"]
+    input_files = context["input_files"]
     majors = "\n".join(f"- {major}" for major in context["majors"])
     return f"""# Deep Crawl Task: {school_key}
 
@@ -138,8 +153,8 @@ Majors in scope:
 
 Input files:
 
-- `outputs/ai_path_candidates/deep_crawl_test_v1_20260627/school_packets/{school_key}/school_context.json`
-- `outputs/ai_path_candidates/deep_crawl_test_v1_20260627/school_packets/{school_key}/input_rows.csv`
+- `{input_files["school_context"]}`
+- `{input_files["input_rows"]}`
 
 Output directory:
 
@@ -229,7 +244,7 @@ def main() -> None:
         school_key = f"school_{index:02d}"
         school_dir = packet_dir / school_key
         output_dir = args.output_dir / "school_outputs" / school_key
-        context = make_school_context(index, school, rows, output_dir)
+        context = make_school_context(index, school, rows, args.output_dir, args.input)
 
         write_json(school_dir / "school_context.json", context)
         write_csv(school_dir / "input_rows.csv", rows[IDENTITY_COLUMNS].to_dict(orient="records"), IDENTITY_COLUMNS)

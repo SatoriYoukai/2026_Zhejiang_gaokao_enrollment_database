@@ -197,6 +197,7 @@ Each `row_findings` item must include:
 - `volunteer_id`
 - `college_name`
 - `major_name`
+- `official_major_match`
 - `risk_tags`
 - `uncertainty_tags`
 - `major_alignment`
@@ -214,6 +215,16 @@ Each `row_findings` item must include:
 - `evidence_gaps`
 
 Row-level `risk_tags` and `uncertainty_tags` use the same controlled vocabularies as school-level tags. Use them to distinguish risks that affect only one major, such as `new_no_history` for a new AI direction or `campus_move` for one computer major.
+
+`official_major_match` must state how closely official evidence matches the input row:
+
+- `exact`: same school and same major/track;
+- `near_match`: same major family but track/class name differs;
+- `class_or_track_match`: official evidence matches a class, honors track, or experiment class included in the row;
+- `mismatch_risk`: source may refer to another project, such as a sino-foreign program or different tuition track;
+- `not_found`: no credible official major-level evidence found.
+
+When `official_major_match` is not `exact`, add `exact_major_match_unclear` or `source_conflict` where appropriate and explain the mismatch in `evidence_gaps`.
 
 `decision_snapshot` must be a compact object with these fields:
 
@@ -322,6 +333,13 @@ Risk tags:
 - `small_plan`
 - `new_no_history`
 - `campus_move`
+- `source_plan_conflict`
+- `attachment_captcha_blocked`
+- `attachment_unparsed`
+- `ocr_needed`
+- `exact_major_match_unclear`
+- `no_recommendation_path`
+- `weak_postgraduate_path`
 - `remote_or_weak_resource`
 - `management_heavy_signal`
 - `time_tax_high_signal`
@@ -344,6 +362,10 @@ Uncertainty tags:
 - `major_diversion_unclear`
 - `postgraduate_outcome_unclear`
 - `time_tax_unclear`
+- `official_plan_conflict_unclear`
+- `attachment_access_unclear`
+- `ocr_needed`
+- `exact_major_match_unclear`
 
 ## Debugger-Specific Rules
 
