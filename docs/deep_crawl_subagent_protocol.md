@@ -18,6 +18,12 @@ For one school at a time, collect auditable evidence about whether the selected 
 
 The output must help the main thread decide whether the school should move into the next 300-level deep-review set, remain borderline, or be dropped before expensive scoring.
 
+Every school report must answer three final-goal questions:
+
+- Can the student learn the needed foundations for AI research: math, CS systems, ML/AI, and research method?
+- Can the student self-study and build/research with low time-tax: limited formalism, manageable management burden, stable campus/dorm logistics?
+- Does the school improve the postgraduate path: predictable recommendation policy, accessible research resources, and credible upward mobility?
+
 ## Hard Rules
 
 1. Process exactly one `college_name` per run.
@@ -111,6 +117,10 @@ Then discover student-facing sources:
 - `{学校} 转专业 难`
 - `{学校} {专业} B站`
 - `{学校} {专业} 学长 学姐 经验`
+- `{学校} 早晚自习 查寝 跑操 管理`
+- `{学校} 形式主义 活动 学业压力`
+- `{学校} {专业} 本科生 进组 导师制 大创`
+- `{学校} {专业} 升学去向 保研去向`
 
 When search results are thin, search by college name and by likely department names. If official pages are JavaScript-heavy, use browser/Playwright tools. If a PDF is found, extract text and record the PDF URL.
 
@@ -148,6 +158,8 @@ For a normal school run, try to collect:
 - 1 college-level recommendation detail or a clear not-found record;
 - 1 transfer/minor/course-choice policy source;
 - 1 research-resource source;
+- 1 undergraduate research access source or a clear not-found record;
+- 1 postgraduate outcome or recommendation-destination source if available;
 - 1 dorm/campus source;
 - 1 to 3 student-facing signals if available.
 
@@ -171,6 +183,7 @@ Required top-level fields:
 - `run_scope`
 - `majors`
 - `school_level_findings`
+- `decision_snapshot`
 - `row_findings`
 - `evidence_gaps`
 - `risk_tags`
@@ -187,6 +200,7 @@ Each `row_findings` item must include:
 - `risk_tags`
 - `uncertainty_tags`
 - `major_alignment`
+- `goal_alignment`
 - `training_plan`
 - `math_foundation`
 - `cs_ai_foundation`
@@ -200,6 +214,23 @@ Each `row_findings` item must include:
 - `evidence_gaps`
 
 Row-level `risk_tags` and `uncertainty_tags` use the same controlled vocabularies as school-level tags. Use them to distinguish risks that affect only one major, such as `new_no_history` for a new AI direction or `campus_move` for one computer major.
+
+`decision_snapshot` must be a compact object with these fields:
+
+- `provisional_bucket`: `strong_keep`, `keep`, `borderline`, `defer`, or `drop`
+- `can_learn_needed_foundations`
+- `low_time_tax_likelihood`
+- `postgraduate_path_strength`
+- `best_keep_reason`
+- `largest_risk`
+- `manual_questions_that_change_decision`
+
+Each row-level `goal_alignment` must explicitly discuss:
+
+- `foundation_fit`: math, CS systems, ML/AI, and research-method preparation;
+- `learning_freedom_fit`: expected room for self-study and independent projects;
+- `research_postgrad_fit`: research access, recommendation path, and upward mobility;
+- `time_tax_risk`: management/formalism/campus-move/course-fragmentation risk.
 
 ### `sources.csv`
 
@@ -249,10 +280,13 @@ This file is required even when no student-facing source is adopted. In that cas
 A readable Chinese report with:
 
 - school and majors covered;
+- provisional decision bucket: `strong_keep`, `keep`, `borderline`, `defer`, or `drop`;
 - strongest positive evidence;
 - strongest risks;
 - missing evidence;
 - student-facing signals;
+- final-goal alignment: foundations, low time-tax, postgraduate path;
+- decision-changing manual questions;
 - questions for the next deep-review/scoring stage.
 
 ### `debug_notes.md`
@@ -290,6 +324,7 @@ Risk tags:
 - `campus_move`
 - `remote_or_weak_resource`
 - `management_heavy_signal`
+- `time_tax_high_signal`
 - `dorm_negative_signal`
 - `source_conflict`
 - `low_research_signal`
@@ -307,6 +342,8 @@ Uncertainty tags:
 - `policy_year_unclear`
 - `research_access_unclear`
 - `major_diversion_unclear`
+- `postgraduate_outcome_unclear`
+- `time_tax_unclear`
 
 ## Debugger-Specific Rules
 
