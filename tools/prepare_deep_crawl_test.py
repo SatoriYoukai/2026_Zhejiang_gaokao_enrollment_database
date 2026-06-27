@@ -94,6 +94,7 @@ def make_school_context(
     rows: pd.DataFrame,
     run_root: Path,
     source_pool: Path,
+    mode_name: str,
 ) -> dict[str, object]:
     row_dicts = rows[IDENTITY_COLUMNS].to_dict(orient="records")
     majors = sorted({str(row["major_name"]) for row in row_dicts})
@@ -114,18 +115,26 @@ def make_school_context(
             "deep_crawl_task": str((packet_dir / "deep_crawl_task.md").as_posix()),
         },
         "run_scope": {
-            "mode": "deep_crawl_test",
+            "mode": mode_name,
             "one_school_only": True,
             "majors_count": len(majors),
             "row_count": len(row_dicts),
         },
         "majors": majors,
         "input_rows": row_dicts,
-        "required_outputs": ["result.json", "sources.csv", "student_search_log.csv", "summary.md", "debug_notes.md"],
+        "required_outputs": [
+            "result.json",
+            "sources.csv",
+            "student_search_log.csv",
+            "rescue_queue.csv",
+            "summary.md",
+            "debug_notes.md",
+        ],
         "debugger_required_outputs": [
             "result.json",
             "sources.csv",
             "student_search_log.csv",
+            "rescue_queue.csv",
             "summary.md",
             "debug_notes.md",
             "sop_debugger_report.md",
@@ -166,7 +175,8 @@ Hard constraints:
 - Use UTF-8 or UTF-8-SIG explicitly when reading and writing.
 - Do not process any other school.
 - Do not change the schema.
-- If a path, field, or source is blocked, report it in `debug_notes.md` and continue only when the SOP allows it.
+- Initialize `sources.csv`, `student_search_log.csv`, and `rescue_queue.csv` with headers before collecting web evidence, then update them during the run.
+- If a path, field, or source is blocked, report it in both `debug_notes.md` and `rescue_queue.csv`, then continue only when the SOP allows it.
 - If the workflow itself is blocked, stop and report instead of inventing a new workflow.
 
 Required outputs:
@@ -174,6 +184,7 @@ Required outputs:
 - `result.json`
 - `sources.csv`
 - `student_search_log.csv`
+- `rescue_queue.csv`
 - `summary.md`
 - `debug_notes.md`
 """
@@ -205,10 +216,12 @@ The debugger validates process reliability before normal subagents are launched.
 - Can the agent find official school/admissions/major/policy sources?
 - Does the fallback chain work when normal web open fails?
 - Are PDF, DOC, DOCX, and WeChat-style pages handled or reported cleanly?
+- Are blocked URLs, attachments, missing fields, and access failures recorded in `rescue_queue.csv` for later rescue?
 - Are key pages static HTML, PDF, or JavaScript-heavy?
 - Is PDF extraction needed?
 - Are student-facing sources accessible enough for signals?
 - Is `student_search_log.csv` written even when signals are not adopted?
+- Is `rescue_queue.csv` written even when no blockers remain?
 - Does the one-school-per-run structure prevent context overload?
 
 ## Reporting Checks
@@ -225,10 +238,19 @@ def main() -> None:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--schools", nargs="*", default=DEFAULT_TEST_SCHOOLS)
+    parser.add_argument("--all-schools", action="store_true", help="Create one packet per school in first-seen input order.")
+    parser.add_argument("--limit", type=int, default=0, help="Optional school limit after selection; 0 means no limit.")
+    parser.add_argument("--mode-name", default="deep_crawl_test")
     args = parser.parse_args()
 
     df = pd.read_csv(args.input, dtype=str, encoding="utf-8-sig")
     df = normalize_rows(df)
+    if args.all_schools:
+        schools = df["college_name"].drop_duplicates().astype(str).tolist()
+    else:
+        schools = args.schools
+    if args.limit:
+        schools = schools[: args.limit]
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     packet_dir = args.output_dir / "school_packets"
@@ -236,7 +258,7 @@ def main() -> None:
     selected_rows: list[dict[str, str]] = []
     manifest_schools: list[dict[str, object]] = []
 
-    for index, school in enumerate(args.schools, start=1):
+    for index, school in enumerate(schools, start=1):
         rows = df[df["college_name"] == school].copy()
         if rows.empty:
             raise SystemExit(f"School not found in input: {school}")
@@ -244,7 +266,7 @@ def main() -> None:
         school_key = f"school_{index:02d}"
         school_dir = packet_dir / school_key
         output_dir = args.output_dir / "school_outputs" / school_key
-        context = make_school_context(index, school, rows, args.output_dir, args.input)
+        context = make_school_context(index, school, rows, args.output_dir, args.input, args.mode_name)
 
         write_json(school_dir / "school_context.json", context)
         write_csv(school_dir / "input_rows.csv", rows[IDENTITY_COLUMNS].to_dict(orient="records"), IDENTITY_COLUMNS)

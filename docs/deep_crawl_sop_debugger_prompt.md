@@ -56,6 +56,7 @@ Required sample output files:
 - `result.json`
 - `sources.csv`
 - `student_search_log.csv`
+- `rescue_queue.csv`
 - `summary.md`
 - `debug_notes.md`
 - `sop_debugger_report.md`

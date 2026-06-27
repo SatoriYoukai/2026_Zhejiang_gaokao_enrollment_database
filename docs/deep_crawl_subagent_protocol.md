@@ -132,7 +132,7 @@ Use the least fragile tool that can obtain the evidence.
 2. If a page times out or renders poorly, try `curl.exe -L <url>` from the repo root.
 3. If PowerShell `Invoke-WebRequest` fails on headers or downloads, retry with `curl.exe -I` or `curl.exe -L -o`.
 4. If a page is JavaScript-heavy, login-gated, or requires clicking, use browser/Playwright and record that this was needed.
-5. If all methods fail, write the URL, attempted method, and error summary in `debug_notes.md`.
+5. If all methods fail, write the URL, attempted method, and error summary in both `debug_notes.md` and `rescue_queue.csv`.
 
 For official WeChat articles:
 
@@ -172,6 +172,14 @@ Stop when either:
 ## Output Files
 
 Write all files under the assigned school output directory. Use UTF-8 with BOM.
+
+Before collecting web evidence, create the output directory and initialize these CSV files with headers:
+
+- `sources.csv`
+- `student_search_log.csv`
+- `rescue_queue.csv`
+
+Update them during the run instead of waiting until the final response. In particular, write a `rescue_queue.csv` row as soon as a blocker is identified. Long-running agents may still revise summaries later, but raw sources, searches, and blockers should survive an interrupted run.
 
 ### `result.json`
 
@@ -286,6 +294,67 @@ Required columns:
 
 This file is required even when no student-facing source is adopted. In that case, record the attempted queries and `not_found` or `not_used_low_quality`.
 
+### `rescue_queue.csv`
+
+This machine-readable file records every blocked item that should be rescued later in a separate concentrated pass. It is required even when there are no blockers; if nothing is blocked, write the header row only.
+
+Required columns:
+
+- `rescue_id`
+- `school_key`
+- `college_name`
+- `major_name`
+- `blocked_item_type`
+- `title_or_field`
+- `url`
+- `source_id_if_any`
+- `blocker_type`
+- `attempted_methods`
+- `error_or_symptom`
+- `impact_on_decision`
+- `priority`: `high`, `medium`, or `low`
+- `suggested_rescue_method`
+- `related_risk_tags`
+- `related_uncertainty_tags`
+
+Use one row per blocked URL, attachment, search path, or key field. Do not collapse unrelated blockers into one row.
+
+Controlled `blocked_item_type` values:
+
+- `official_page`
+- `training_plan_attachment`
+- `policy_attachment`
+- `wechat_article`
+- `student_signal_page`
+- `search_result`
+- `field_missing`
+- `other`
+
+Controlled `blocker_type` values:
+
+- `http_403`
+- `http_404`
+- `http_412`
+- `timeout`
+- `captcha_or_verification`
+- `login_or_campus_ip`
+- `javascript_rendering`
+- `download_failed`
+- `archive_or_binary_unparsed`
+- `ocr_needed`
+- `wechat_access`
+- `search_sparse`
+- `source_conflict`
+- `unknown`
+
+Priority guidance:
+
+- `high`: could change keep/borderline/drop, or blocks a central field such as exact training plan, recommendation policy, major identity, campus/resource assignment, or tuition.
+- `medium`: affects confidence or scoring but probably does not flip the bucket alone.
+- `low`: useful for completeness, but current evidence is enough for the next stage.
+
+`suggested_rescue_method` should be concrete, for example `rendered_browser`, `browser_with_download`, `ocr_pdf`, `manual_official_site_search`, `wechat_browser_view`, `campus_policy_search`, or `ask_admissions_office`.
+
 ### `summary.md`
 
 A readable Chinese report with:
@@ -310,11 +379,14 @@ Operational notes:
 - schema or SOP friction;
 - time sinks or source-quality issues.
 
+Any blocker mentioned here must also appear in `rescue_queue.csv`, unless it is purely a transient note that did not affect evidence collection.
+
 Normal required outputs:
 
 - `result.json`
 - `sources.csv`
 - `student_search_log.csv`
+- `rescue_queue.csv`
 - `summary.md`
 - `debug_notes.md`
 
@@ -392,6 +464,7 @@ Debugger required outputs:
 - `result.json`
 - `sources.csv`
 - `student_search_log.csv`
+- `rescue_queue.csv`
 - `summary.md`
 - `debug_notes.md`
 - `sop_debugger_report.md`

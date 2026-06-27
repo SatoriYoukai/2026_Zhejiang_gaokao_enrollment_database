@@ -13,6 +13,7 @@ REQUIRED_FILES = [
     "result.json",
     "sources.csv",
     "student_search_log.csv",
+    "rescue_queue.csv",
     "summary.md",
     "debug_notes.md",
 ]
@@ -104,6 +105,25 @@ STUDENT_COLUMNS = [
     "related_fields",
 ]
 
+RESCUE_COLUMNS = [
+    "rescue_id",
+    "school_key",
+    "college_name",
+    "major_name",
+    "blocked_item_type",
+    "title_or_field",
+    "url",
+    "source_id_if_any",
+    "blocker_type",
+    "attempted_methods",
+    "error_or_symptom",
+    "impact_on_decision",
+    "priority",
+    "suggested_rescue_method",
+    "related_risk_tags",
+    "related_uncertainty_tags",
+]
+
 
 def split_source_ids(value: Any) -> list[str]:
     if value is None:
@@ -137,6 +157,8 @@ def validate_school(run_dir: Path, school_key: str, expected_rows: int | None, r
         "sources": 0,
         "official_hard_sources": 0,
         "student_searches": 0,
+        "rescue_items": 0,
+        "high_priority_rescue_items": 0,
         "protocol_issues": 0,
     }
 
@@ -220,6 +242,26 @@ def validate_school(run_dir: Path, school_key: str, expected_rows: int | None, r
         except Exception as exc:  # noqa: BLE001
             errors.append(f"student_csv_parse_error:{exc}")
 
+    rescue_path = out_dir / "rescue_queue.csv"
+    if rescue_path.exists() and rescue_path.stat().st_size:
+        try:
+            rescue = pd.read_csv(rescue_path, dtype=str, encoding="utf-8-sig").fillna("")
+            metrics["rescue_items"] = len(rescue)
+            for col in RESCUE_COLUMNS:
+                if col not in rescue.columns:
+                    errors.append(f"rescue_queue_missing_column:{col}")
+            if "rescue_id" in rescue.columns:
+                duplicates = rescue["rescue_id"][rescue["rescue_id"].duplicated()].astype(str).tolist()
+                for duplicate in sorted(set(duplicates)):
+                    errors.append(f"duplicate_rescue_id:{duplicate}")
+            if "priority" in rescue.columns:
+                metrics["high_priority_rescue_items"] = int((rescue["priority"] == "high").sum())
+                invalid_priorities = sorted(set(rescue.loc[~rescue["priority"].isin(["high", "medium", "low"]), "priority"]))
+                for priority in invalid_priorities:
+                    errors.append(f"invalid_rescue_priority:{priority}")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"rescue_queue_csv_parse_error:{exc}")
+
     metrics["errors"] = ";".join(errors)
     metrics["warnings"] = ";".join(warnings)
     metrics["valid"] = not errors
@@ -257,6 +299,8 @@ def main() -> None:
         "total_sources": int(out["sources"].sum()),
         "total_official_hard_sources": int(out["official_hard_sources"].sum()),
         "total_student_searches": int(out["student_searches"].sum()),
+        "total_rescue_items": int(out["rescue_items"].sum()),
+        "total_high_priority_rescue_items": int(out["high_priority_rescue_items"].sum()),
     }
     (qa_dir / "deep_crawl_validation_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2),
