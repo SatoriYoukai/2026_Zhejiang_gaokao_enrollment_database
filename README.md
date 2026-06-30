@@ -1,71 +1,103 @@
 # 2026 浙江普通类平行志愿数据库
 
-这个仓库把 2026 年浙江普通类平行计划表和 2023-2025 年普通类平行投档录取情况整理成一个可筛选、可复核的数据包。主表一行对应一个 2026 平行志愿项，即 `院校代码 + 专业代码`，并尽量拼入过去三年的录取分数、位次和来源页码。
+这个仓库把 2026 年浙江普通类平行招生计划和 2023-2025 年普通类平行投档录取情况整理成一套可筛选、可复核、可二次分析的数据包。
 
-这是个人在志愿填报时筛选用的数据整理项目。正式填报前请回查原始计划表、历史 PDF 和浙江省教育考试院发布的最新文件。
+主表一行对应一个 2026 平行志愿项，即 `院校代码 + 专业代码`，并尽量拼入过去三年的最低录取分数、位次和来源页码。
 
-## 最快使用
+这是一套个人填报研究中沉淀出来的工程产物。它能辅助筛选、排序和结构体检，但不能替代最终填报前对官方计划、学校招生章程、体检限制、单科限制和个人偏好的核对。
 
-推荐先用离线浏览器筛选器：
+## 主要内容
 
-1. 下载或克隆本仓库。
-2. 打开 `outputs/volunteer_browser/index.html`。
-3. 如果浏览器拦截本地大文件脚本，改用本地服务打开：
+- `outputs/clean_database/`: 清洗后的核心数据库，包含 CSV、Excel 和 SQLite。
+- `outputs/volunteer_browser/`: 面向全量志愿数据库的静态筛选浏览器。
+- `outputs/ai_path_tag_browser/`: 面向 AI/数学/计算机路径候选池的标签浏览器，半成品，保留作复盘和二次开发参考。
+- `tools/estimate_volunteer_landing_portable.py`: 浙江专业平行志愿落点概率估计器。
+- `data/rank_model_database.csv`: 落点估计器使用的轻量位次模型数据库。
+- `packaging/`: 便携版估计器的打包说明和启动脚本模板。
+
+## 快速使用
+
+### 1. 使用清洗数据
+
+最直接的文件：
+
+- `outputs/clean_database/volunteer_master_2026_with_history.csv`
+- `outputs/clean_database/volunteer_database.xlsx`
+- `outputs/clean_database/zhejiang_parallel_volunteer_database.sqlite`
+
+### 2. 打开普通筛选浏览器
 
 ```powershell
 python -m http.server 8765 --directory outputs/volunteer_browser
 ```
 
-然后访问 `http://127.0.0.1:8765/`。
+然后访问：
 
-也可以直接使用这些数据文件：
+```text
+http://127.0.0.1:8765/
+```
 
-- `outputs/clean_database/volunteer_database.xlsx`: Excel 工作簿，适合手动筛选。
-- `outputs/clean_database/zhejiang_parallel_volunteer_database.sqlite`: SQLite 数据库，适合写 SQL 查询。
-- `outputs/clean_database/volunteer_master_2026_with_history.csv`: 主表 CSV，适合二次处理。
+也可以直接打开 `outputs/volunteer_browser/index.html`。如果浏览器限制本地大文件脚本，使用上面的本地 HTTP 服务。
 
-当前推荐目录是 `outputs/clean_database/` 和 `outputs/volunteer_browser/`，没有 `v2`、`v3` 之类旧版本目录。
+### 3. 打开 AI 路径标签浏览器
+
+```powershell
+python -m http.server 8771 --directory outputs/ai_path_tag_browser
+```
+
+然后访问：
+
+```text
+http://127.0.0.1:8771/
+```
+
+注意：这个 browser 是半成品，里面的标签、权重和证据摘要带有本次实际填报研究的个人偏好。它适合复盘和辅助浏览，不适合当作通用自动决策工具。
+
+### 4. 运行落点概率估计器
+
+开发环境运行：
+
+```powershell
+python -X utf8 tools\estimate_volunteer_landing_portable.py "你的志愿表.xlsx" --master data\rank_model_database.csv --user-rank 39000
+```
+
+支持 `.xls`、`.xlsx`、`.csv` 志愿录入表。输出会生成在输入文件同目录，包括 CSV、Excel 和 TXT 报告。
+
+更详细说明见：
+
+```text
+docs/volunteer_landing_probability_tool.md
+packaging/README_portable.md
+```
 
 ## 数据口径
 
-- 2026 计划表提供志愿项、院校、专业、选科、计划数、学费、备注等字段。
-- `tuition` 统一为元/年；`tuition_raw` 保留原始计划表中的学费写法，例如 `11万`、`见简注`。
+- `tuition` 统一为元/年；`tuition_raw` 保留原始计划表中的学费写法。
 - 2023-2025 历史 PDF 没有 2026 专业代码，因此历史记录按院校身份和专业名称保守匹配到 2026 志愿项。
 - 主表中的空白历史列表示没有找到高置信匹配，不等于该专业过去一定没有招生。
-- `*_match_level` 记录历史匹配方式；`exact` 最稳，`manual_ambiguous` 表示从歧义候选中按校订规则指定拼回。
-- `*_history_source_page` 是历史 PDF 页码，进入最终志愿单前建议按页码回查原始资料。
+- `*_match_level` 记录历史匹配方式；`exact` 最稳，`manual_ambiguous` 表示从歧义候选中按校订规则指定。
+- `*_history_source_page` 是历史 PDF 页码，正式使用前建议按页码回查原始资料。
 
-## 仓库内容
+## 核心输出
 
-- `build_clean_database.py`: 从原始资料构建清洗数据库的脚本。
-- `curation_rules.py`: 历史匹配的人工校订规则。
-- `tools/build_volunteer_browser.py`: 从主表 CSV 生成离线 HTML 筛选器数据。
-- `requirements.txt`: Python 依赖。
-- `2026年_普通类平行计划1_普通类平行录取_物理化学生物.xlsm`: 2026 普通类平行计划原始表。
-- `2023录取情况.pdf`, `2024录取情况.pdf`, `2025录取情况.pdf`: 2023-2025 录取情况原始 PDF。
-- `outputs/clean_database/`: 清洗后的 Excel、CSV、SQLite 和复核辅助表。
-- `outputs/volunteer_browser/`: 可离线打开的 HTML 筛选器。
-
-## 主要输出
-
-- `volunteer_database.xlsx`: Excel 工作簿。
-- `zhejiang_parallel_volunteer_database.sqlite`: SQLite 数据库。
-- `volunteer_master_2026_with_history.csv`: 主表，一行一个 2026 志愿项，并拼入过去三年录取情况。
 - `plan_2026.csv`: 2026 计划清洗表。
 - `admissions_history_2023_2025.csv`: 2023-2025 历史录取抽取表。
+- `volunteer_master_2026_with_history.csv`: 主表，一行一个 2026 志愿项，并拼入过去三年录取情况。
+- `volunteer_database.xlsx`: Excel 工作簿。
+- `zhejiang_parallel_volunteer_database.sqlite`: SQLite 数据库。
 - `ambiguous_history_matches.csv`: 仍存在多种可能匹配、未自动写入主表的历史候选。
 - `college_identity_mismatches.csv`: 同院校代码但院校身份仍不兼容或不确定的候选。
 - `curated_rejections.csv`: 校订后从主表移出的高风险非精确历史匹配。
 
 ## 当前数据规模
 
-- 2026 计划志愿项: 24,240
-- 历史录取记录: 66,481
-- 主表志愿项: 24,240
-- 仍保留的歧义匹配候选: 215
-- 院校身份不兼容或不确定拦截: 2
-- 校订排除的非精确匹配: 1,074
-- 匹配到 2026 志愿项的历史记录: 2023 年 13,809，2024 年 15,965，2025 年 18,940
+- 2026 计划志愿项：24,240
+- 历史录取记录：66,481
+- 主表志愿项：24,240
+- 仍保留的歧义匹配候选：215
+- 院校身份不兼容或不确定拦截：2
+- 校订排除的非精确匹配：1,074
+- 匹配到 2026 志愿项的历史记录：2023 年 13,809，2024 年 15,965，2025 年 18,940
 
 ## 复现构建
 
@@ -76,6 +108,14 @@ python tools/build_volunteer_browser.py
 ```
 
 `build_clean_database.py` 会读取仓库根目录下的 2026 计划表、2023-2025 PDF 和 `curation_rules.py`，并写入 `outputs/clean_database/`。重建数据库后，再运行 `tools/build_volunteer_browser.py` 生成 `outputs/volunteer_browser/` 的前端数据。
+
+AI 路径标签浏览器的生成脚本是：
+
+```powershell
+python tools/build_ai_path_tag_browser.py
+```
+
+它依赖本次研究过程中产生的筛选、打标、证据汇总文件。若要通用化，需要重做数据契约。
 
 ## 质量控制
 
@@ -88,4 +128,6 @@ python tools/build_volunteer_browser.py
 
 - 历史匹配不能视为官方专业代码映射。
 - 数据清洗不能替代最终填报前的官方文件核对。
-- 本项目只整理计划和历史投档信息，不预测录取概率，也不处理个人偏好、体检限制、单科要求等完整填报决策问题。
+- 落点概率估计器适合做志愿表结构体检，不适合把小数点后的概率当作精确预测。
+- 标签 browser 中的证据缺口不能直接解释为学校或专业质量差。
+- 本仓库不完整处理个人偏好、体检限制、单科限制、招生章程特殊要求等最终决策问题。

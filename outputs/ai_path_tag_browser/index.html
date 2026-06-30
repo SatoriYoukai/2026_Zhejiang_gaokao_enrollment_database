@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI 科研路径候选池</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>AI 科研路径候选池</h1>
+        <p id="dataMeta">加载数据中...</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="exportConfigBtn" type="button">导出配置</button>
+        <label class="file-button">
+          导入配置
+          <input id="importConfigInput" type="file" accept="application/json,.json" />
+        </label>
+        <button id="exportCsvBtn" type="button">导出当前排序 CSV</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="配置和筛选">
+        <section class="panel">
+          <div class="panel-title">
+            <h2>评分配置</h2>
+            <button id="resetConfigBtn" type="button" title="恢复当前方案默认权重">重置</button>
+          </div>
+          <label>
+            默认方案
+            <select id="profileSelect"></select>
+          </label>
+          <p id="profileDescription" class="hint"></p>
+          <div class="switch-row">
+            <label class="check-line"><input id="hideBanToggle" type="checkbox" checked /> 隐藏 ban</label>
+            <label class="check-line"><input id="manualOnlyToggle" type="checkbox" /> 只看复核</label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <h2>筛选</h2>
+            <button id="clearFiltersBtn" type="button">清空</button>
+          </div>
+          <label>
+            搜索
+            <input id="searchInput" type="search" placeholder="院校、专业、标签、证据" />
+          </label>
+          <label>
+            专业组
+            <select id="groupSelect">
+              <option value="">全部</option>
+              <option value="math_stat_info">数学/统计/信计</option>
+              <option value="cs">计算机</option>
+              <option value="ai_intelligent_science">AI/智能</option>
+            </select>
+          </label>
+          <label>
+            证据置信
+            <select id="confidenceSelect">
+              <option value="">全部</option>
+              <option value="high">high</option>
+              <option value="medium">medium</option>
+              <option value="low">low</option>
+              <option value="derived">derived</option>
+            </select>
+          </label>
+          <label>
+            标签包含
+            <select id="includeTagSelect"></select>
+          </label>
+          <label>
+            标签排除
+            <select id="excludeTagSelect"></select>
+          </label>
+        </section>
+
+        <section class="panel weights-panel">
+          <div class="panel-title">
+            <h2>评分权重</h2>
+            <button id="addTagBtn" type="button">加标签</button>
+          </div>
+          <div id="weightEditor" class="weight-editor"></div>
+        </section>
+      </aside>
+
+      <section class="content">
+        <section class="summary-grid" aria-label="当前结果摘要">
+          <div>
+            <strong id="shownCount">0</strong>
+            <span>当前候选</span>
+          </div>
+          <div>
+            <strong id="autoCount">0</strong>
+            <span>自动池</span>
+          </div>
+          <div>
+            <strong id="manualCount">0</strong>
+            <span>人工复核</span>
+          </div>
+          <div>
+            <strong id="highEvidenceCount">0</strong>
+            <span>高置信标签</span>
+          </div>
+        </section>
+
+        <section class="toolbar">
+          <div id="activeConfig" class="active-config"></div>
+          <label>
+            排序
+            <select id="sortSelect">
+              <option value="scoreTierRank">质量梯队 + 位次</option>
+              <option value="scoreDesc">质量分从高到低</option>
+              <option value="rankAsc">位次从冲到保</option>
+              <option value="rankDesc">位次从保到冲</option>
+              <option value="collegeAsc">院校名称</option>
+            </select>
+          </label>
+        </section>
+
+        <section id="cards" class="cards" aria-label="候选志愿卡片"></section>
+      </section>
+    </main>
+
+    <dialog id="detailDialog">
+      <div class="dialog-head">
+        <div>
+          <h2 id="detailTitle">详情</h2>
+          <p id="detailSubtitle"></p>
+        </div>
+        <button id="closeDialogBtn" type="button" aria-label="关闭">×</button>
+      </div>
+      <div id="detailBody"></div>
+    </dialog>
+
+    <dialog id="tagDialog">
+      <div class="dialog-head">
+        <div>
+          <h2>新增标签</h2>
+          <p>用于全局评分，也可在单条志愿里使用。</p>
+        </div>
+        <button id="closeTagDialogBtn" type="button" aria-label="关闭">×</button>
+      </div>
+      <form id="tagForm" class="tag-form">
+        <label>
+          标签名
+          <input id="newTagLabel" required placeholder="例如 北方时间税风险" />
+        </label>
+        <label>
+          默认权重
+          <input id="newTagWeight" type="number" value="-5" />
+        </label>
+        <label>
+          类型
+          <select id="newTagKind">
+            <option value="preference">偏好</option>
+            <option value="platform">平台</option>
+            <option value="fit">对齐</option>
+            <option value="red_flag">红旗</option>
+            <option value="region">地区</option>
+          </select>
+        </label>
+        <div class="form-actions">
+          <button type="submit">添加</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

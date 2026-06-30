@@ -10,8 +10,26 @@ outputs/*
 !outputs/clean_database/**
 !outputs/volunteer_browser/
 !outputs/volunteer_browser/**
+!outputs/ai_path_tag_browser/
+!outputs/ai_path_tag_browser/**
 outputs/clean_database/_cache/
 outputs/volunteer_browser/server.pid
+outputs/ai_path_tag_browser/*.zip
+
+# Generated candidate pools, final personal volunteer orders, stress-test outputs,
+# and packaged executables are local artifacts, not source data.
+outputs/ai_path_candidates/
+outputs/volunteer_order_v1_20260629/
+outputs/rank_sorted_counterfactual_20260630/
+outputs/portable*/
+outputs/portable_*/*
+build/
+build_light/
+build_portable/
+dist/
+dist_light/
+dist_portable/
+data/rank_model_database_scenario*.csv
 
 # Local scratch files from exploratory rebuilds.
 tmp/
