@@ -46,11 +46,22 @@ python3 tools/estimate_volunteer_landing_portable.py "你的志愿表.xlsx" --ma
 
 ## Windows 打包
 
-需要本机安装 PyInstaller：
+推荐直接运行 Windows 打包脚本：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging\build_windows_package.ps1
+```
+
+脚本会运行 PyInstaller，并把启动器和说明文件复制进发布目录，最后生成：
+
+```text
+dist/志愿落点概率估算器_windows.zip
+```
+
+需要本机安装打包依赖：
 
 ```powershell
 python -m pip install pyinstaller openpyxl xlrd
-pyinstaller 志愿落点概率估算器.spec --clean
 ```
 
 发布便携版时，建议把生成目录整体压缩为 zip。目录中通常包括：
@@ -61,6 +72,8 @@ pyinstaller 志愿落点概率估算器.spec --clean
 - `运行_志愿落点概率估算器.bat`
 
 `packaging/run_estimator.bat` 是 Windows 启动脚本模板，会寻找同目录下的 `.exe` 并运行。
+
+不要让普通用户直接双击 `.exe`。这是控制台程序，运行结束或报错后窗口可能立刻关闭，看起来像“闪退”。发布包里应当让用户双击 `运行_志愿落点概率估算器.bat`。
 
 ## macOS 打包
 

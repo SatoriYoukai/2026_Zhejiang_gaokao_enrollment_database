@@ -13,6 +13,8 @@ a = Analysis(
     excludes=[
         "pandas",
         "numpy",
+        "lxml",
+        "PIL",
         "scipy",
         "matplotlib",
         "torch",

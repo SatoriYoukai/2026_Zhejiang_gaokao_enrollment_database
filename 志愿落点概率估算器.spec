@@ -12,6 +12,9 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'pandas',
+        'numpy',
+        'lxml',
+        'PIL',
         'scipy',
         'matplotlib',
         'torch',
