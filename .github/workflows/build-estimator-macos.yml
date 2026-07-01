@@ -1,0 +1,25 @@
+name: Build macOS landing estimator
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build package
+        run: bash packaging/build_macos_package.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zytb-landing-estimator-macos
+          path: dist_macos/志愿落点概率估算器_macos.zip

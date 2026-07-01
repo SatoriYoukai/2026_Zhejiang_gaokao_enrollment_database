@@ -13,7 +13,7 @@
 - `outputs/ai_path_tag_browser/`: 面向 AI/数学/计算机路径候选池的标签浏览器，半成品，保留作复盘和二次开发参考。
 - `tools/estimate_volunteer_landing_portable.py`: 浙江专业平行志愿落点概率估计器。
 - `data/rank_model_database.csv`: 落点估计器使用的轻量位次模型数据库。
-- `packaging/`: 便携版估计器的打包说明和启动脚本模板。
+- `packaging/`: 便携版估计器的 Windows/macOS 打包说明、启动脚本模板和 macOS GitHub Actions 构建工作流。
 
 ## 快速使用
 
@@ -61,7 +61,7 @@ http://127.0.0.1:8771/
 python -X utf8 tools\estimate_volunteer_landing_portable.py "你的志愿表.xlsx" --master data\rank_model_database.csv --user-rank 39000
 ```
 
-支持 `.xls`、`.xlsx`、`.csv` 志愿录入表。输出会生成在输入文件同目录，包括 CSV、Excel 和 TXT 报告。
+支持 `.xls`、`.xlsx`、`.csv` 志愿录入表。输出会生成在输入文件同目录，包括 CSV、Excel 和 TXT 报告。默认在交互式终端中显示 Monte Carlo 进度条。
 
 更详细说明见：
 

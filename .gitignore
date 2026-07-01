@@ -26,9 +26,12 @@ outputs/portable_*/*
 build/
 build_light/
 build_portable/
+build_macos/
 dist/
 dist_light/
 dist_portable/
+dist_macos/
+.venv-estimator-mac/
 data/rank_model_database_scenario*.csv
 
 # Local scratch files from exploratory rebuilds.

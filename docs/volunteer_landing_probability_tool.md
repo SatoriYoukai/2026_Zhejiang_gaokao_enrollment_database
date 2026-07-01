@@ -51,6 +51,12 @@
 运行_志愿落点概率估算器.bat
 ```
 
+macOS 便携版用户双击：
+
+```text
+运行_志愿落点概率估算器.command
+```
+
 命令行用户可以运行：
 
 ```powershell
@@ -69,6 +75,8 @@ python -X utf8 tools\estimate_volunteer_landing_portable.py "outputs\volunteer_o
 - `--draws`: Monte Carlo 模拟次数，默认 `200000`。
 - `--trend-mode`: 历史趋势处理方式。
 - `--predicted-rank-policy`: 无历史预测位次处理方式，`ask` 为交互确认，`accept` 为全部接受，`manual` 为全部手填。
+- `--progress`: 进度条模式，`auto` 为交互式终端显示，`on` 为强制显示，`off` 为关闭。
+- `--progress-interval`: 进度条刷新间隔，默认 `0.5` 秒。
 
 `trend-mode` 可选：
 
@@ -94,6 +102,21 @@ python -X utf8 tools\estimate_volunteer_landing_portable.py "outputs\volunteer_o
 - `累计录取概率`: 检索到这一条为止的累计录取概率。
 - `该志愿后仍未录取概率`: 检索完这一条后仍未录取的概率。
 - `模型备注`: 历史年数、小计划、参考位次来源和相似样本说明。
+
+## 性能说明
+
+便携版为了减小包体和降低跨平台依赖风险，使用标准库 Monte Carlo 内循环，没有依赖 NumPy。
+
+在本机 80 条志愿表的粗略测试中：
+
+- 读取输入、加载位次数据库、构建相似历史样本有几秒固定成本；
+- 模拟部分主要是单核 CPU 计算，耗时大致随 `--draws` 线性增长；
+- 默认 `200000` 次模拟通常是几十秒量级，而不是程序卡死。
+
+进一步优化有两条路：
+
+- 保持便携小包：优化样本索引和内循环，收益中等，兼容性风险低；
+- 使用 NumPy/Pandas 向量化：速度会更快，但包体明显变大，macOS/Windows 打包和杀毒误报变量也更多。
 
 ## 数学建模简述
 

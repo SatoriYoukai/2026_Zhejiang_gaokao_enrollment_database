@@ -7,6 +7,7 @@ import math
 import random
 import re
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -561,6 +562,57 @@ def sample_from_pool(deltas: list[float], cumulative: list[float], rng: random.R
     return deltas[idx]
 
 
+def format_duration(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    minutes, sec = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours:d}:{minutes:02d}:{sec:02d}"
+    return f"{minutes:02d}:{sec:02d}"
+
+
+class ProgressPrinter:
+    def __init__(self, total: int, label: str, mode: str, interval: float = 0.5) -> None:
+        self.total = max(0, int(total))
+        self.label = label
+        self.interval = max(0.1, float(interval))
+        self.stream = sys.stderr
+        self.enabled = self.total > 0 and (mode == "on" or (mode == "auto" and self.stream.isatty()))
+        self.started = time.perf_counter()
+        self.last_print = 0.0
+        self.last_done = 0
+
+    def update(self, done: int, force: bool = False) -> None:
+        if not self.enabled:
+            return
+        done = min(max(0, int(done)), self.total)
+        now = time.perf_counter()
+        if not force and done < self.total and now - self.last_print < self.interval:
+            return
+        self.last_print = now
+        self.last_done = done
+        ratio = done / self.total if self.total else 1.0
+        width = 28
+        filled = min(width, int(width * ratio))
+        bar = "#" * filled + "-" * (width - filled)
+        elapsed = now - self.started
+        rate = done / elapsed if elapsed > 0 and done else 0.0
+        eta = (self.total - done) / rate if rate > 0 else 0.0
+        self.stream.write(
+            f"\r{self.label} [{bar}] {done}/{self.total} "
+            f"{ratio * 100:6.2f}% elapsed {format_duration(elapsed)} eta {format_duration(eta)}"
+        )
+        self.stream.flush()
+
+    def finish(self) -> None:
+        if not self.enabled:
+            return
+        if self.last_done < self.total:
+            self.update(self.total, force=True)
+        self.stream.write("\n")
+        self.stream.flush()
+
+
 def model_note(row: dict) -> str:
     history_count = int(row["history_count_model"])
     if history_count >= 3:
@@ -580,7 +632,16 @@ def model_note(row: dict) -> str:
     return ";".join(parts)
 
 
-def simulate(volunteers: list[dict], samples: list[dict], user_rank: float, population: int, draws: int, seed: int) -> list[dict]:
+def simulate(
+    volunteers: list[dict],
+    samples: list[dict],
+    user_rank: float,
+    population: int,
+    draws: int,
+    seed: int,
+    progress_mode: str = "auto",
+    progress_interval: float = 0.5,
+) -> list[dict]:
     rng = random.Random(seed)
     user_z = logit_rank(user_rank, population)
     params = []
@@ -601,7 +662,8 @@ def simulate(volunteers: list[dict], samples: list[dict], user_rank: float, popu
     can_counts = [0] * n
     admit_counts = [0] * n
     sqrt2 = math.sqrt(2)
-    for _ in range(draws):
+    progress = ProgressPrinter(draws, "Monte Carlo 模拟", progress_mode, progress_interval)
+    for draw_index in range(draws):
         first = None
         for j, (base_z, deltas, cumulative, extra_sigma) in enumerate(params):
             shock = sample_from_pool(deltas, cumulative, rng) / sqrt2
@@ -614,6 +676,8 @@ def simulate(volunteers: list[dict], samples: list[dict], user_rank: float, popu
                     first = j
         if first is not None:
             admit_counts[first] += 1
+        progress.update(draw_index + 1)
+    progress.finish()
 
     admitted_before = 0
     cumulative_admit = 0.0
@@ -807,12 +871,26 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260630)
     parser.add_argument("--trend-mode", choices=["raw", "global_centered", "rankbin_centered"], default="rankbin_centered")
     parser.add_argument(
+        "--progress",
+        choices=["auto", "on", "off"],
+        default="auto",
+        help="Progress bar mode. auto shows it only in an interactive terminal.",
+    )
+    parser.add_argument("--progress-interval", type=float, default=0.5, help="Seconds between progress bar refreshes.")
+    parser.add_argument("--no-progress", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
         "--predicted-rank-policy",
         choices=["ask", "accept", "manual"],
         default="ask",
         help="How to handle no-history ranks estimated by same-school trimmed mean.",
     )
     args = parser.parse_args()
+    if args.no_progress:
+        args.progress = "off"
+    if args.draws <= 0:
+        parser.error("--draws must be a positive integer.")
+    if args.progress_interval <= 0:
+        parser.error("--progress-interval must be positive.")
 
     if args.user_rank is None:
         args.user_rank = ask_user_rank()
@@ -825,7 +903,16 @@ def main() -> None:
     master = load_master(args.master)
     samples = build_transition_samples(master, args.population, args.trend_mode)
     merged = merge_master_info(volunteers, master, args.population, args.predicted_rank_policy)
-    result = simulate(merged, samples, args.user_rank, args.population, args.draws, args.seed)
+    result = simulate(
+        merged,
+        samples,
+        args.user_rank,
+        args.population,
+        args.draws,
+        args.seed,
+        args.progress,
+        args.progress_interval,
+    )
 
     stem = args.input.stem
     csv_path = out_dir / f"{stem}_落点概率估算.csv"
